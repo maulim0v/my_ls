@@ -12,18 +12,21 @@ struct Data
     char* folder_structure;
     bool is_dir;
     bool is_hidden;
-    unsigned time;
+    long unsigned sec;
+    long unsigned nsec;
 };
 
 struct Node
 {
-    struct Data store;
+    struct Data* store;
     struct Node* next;
 };
 
 struct Node* create_node();
-struct Node* add_data_sorted(struct Node* head, struct Data data);
+struct Node* add_data_sorted(struct Node* head, struct Data* data);
+struct Node* sort_by_time(struct Node* head);
 void print_node(struct Node* head, bool show_hidden);
+void free_node(struct Node* head);
 /// @}
 
 /// @{
@@ -34,8 +37,9 @@ struct Chain
 };
 
 struct Chain* create_chain();
-struct Chain* add_node(struct Chain* head, struct Node* node);
+struct Chain* add_node(struct Chain* chain_head, struct Node* node);
 void print_chain(struct Chain* chain_head, bool show_hidden);
+void free_chain(struct Chain* chain_head);
 /// @}
 
 void my_str_write(char* str);
@@ -47,6 +51,8 @@ bool my_int_compare(unsigned left, unsigned right);
 size_t my_str_len(const char* str);
 
 char* my_str_cat(char* left, char* right);
+
+char* my_new_str(char* str);
 
 int is_directory(const char *path);
 

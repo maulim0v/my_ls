@@ -18,7 +18,7 @@ struct Node* create_node()
     return tmp_node;
 }
 
-struct Node* add_data_sorted(struct Node* head, struct Data data)
+struct Node* add_data_sorted(struct Node* head, struct Data* data)
 {
     struct Node *tmp_node, *tmp_head = head, *tmp_prev = head;
     tmp_node = create_node();
@@ -29,7 +29,7 @@ struct Node* add_data_sorted(struct Node* head, struct Data data)
     }
     else if (head->next == NULL)
     {
-        if (my_str_compare(tmp_head->store.name, data.name) == true)
+        if (my_str_compare(tmp_head->store->name, data->name) == true)
         {
             head = tmp_node;
             head->next = tmp_head;
@@ -44,7 +44,7 @@ struct Node* add_data_sorted(struct Node* head, struct Data data)
         bool inserted = false;
         while(tmp_head->next != NULL)
         {
-            if (my_str_compare(tmp_head->store.name, data.name) == true)
+            if (my_str_compare(tmp_head->store->name, data->name) == true)
             {
                 if (tmp_head == head)
                 {
@@ -69,7 +69,7 @@ struct Node* add_data_sorted(struct Node* head, struct Data data)
 
         if (inserted == false)
         {
-            if (my_str_compare(tmp_head->store.name, data.name) == true)
+            if (my_str_compare(tmp_head->store->name, data->name) == true)
             {
                 tmp_prev->next = tmp_node;
                 tmp_node->next = tmp_head;
@@ -83,12 +83,17 @@ struct Node* add_data_sorted(struct Node* head, struct Data data)
     return head;
 }
 
+struct Node* sort_by_time(struct Node* head)
+{
+
+}
+
 void print_node(struct Node* head, bool show_hidden)
 {
     struct Node* tmp_head = head;
     while (tmp_head != NULL)
     {
-        if (tmp_head->store.is_hidden == true)
+        if (tmp_head->store->is_hidden == true)
         {
             if (show_hidden == false)
             {
@@ -97,9 +102,32 @@ void print_node(struct Node* head, bool show_hidden)
             }
         }
 
-        my_str_write(tmp_head->store.name);
+        my_str_write(tmp_head->store->name);
         my_str_write("  ");
         tmp_head = tmp_head->next;
+    }
+}
+
+void free_node(struct Node* head)
+{
+   struct Node* tmp;
+   while (head != NULL)
+    {
+        tmp = head;
+        if (tmp->store->name != NULL)
+        {
+            free(tmp->store->name);
+        }
+        // if (tmp->store->folder_structure != NULL)
+        // {
+        //     free(tmp->store->folder_structure);
+        // }
+        if (tmp->store != NULL)
+        {
+            free(tmp->store);
+        }
+        head = head->next;
+        free(tmp);
     }
 }
 /// @}
@@ -115,6 +143,11 @@ struct Chain* create_chain()
 
 struct Chain* add_node(struct Chain* head, struct Node* node)
 {
+    if (node == NULL)
+    {
+        return head;
+    }
+
     struct Chain *tmp_chain, *tmp_head = head;
     tmp_chain = create_chain();
     tmp_chain->container = node;
@@ -138,11 +171,23 @@ void print_chain(struct Chain* chain_head, bool show_hidden)
     struct Chain* tmp_head = chain_head;
     while (tmp_head != NULL)
     {
-        my_str_write(tmp_head->container[0].store.folder_structure);
+        my_str_write(tmp_head->container[0].store->folder_structure);
         my_str_write(":\n");
         print_node(tmp_head->container, show_hidden);
         my_str_write("\n\n");
         tmp_head = tmp_head->next_chain;
+    }
+}
+
+void free_chain(struct Chain* chain_head)
+{
+   struct Chain* tmp;
+   while (chain_head != NULL)
+    {
+        tmp = chain_head;
+        free_node(tmp->container);
+        chain_head = chain_head->next_chain;
+        free(tmp);
     }
 }
 /// @}
@@ -223,25 +268,41 @@ size_t my_str_len(const char* str)
 
 char* my_str_cat(char* left, char* right)
 {
-    char* res = (char*)  malloc ( 1 + ( my_str_len(left) + my_str_len(right) ) * sizeof(char) );
+    size_t sz_left = my_str_len(left);
+    size_t sz_right = my_str_len(right);
 
-    while(*left != '\0')
+    char* res = (char*)  malloc ( 1 + ( sz_left + sz_right ) * sizeof(char) );
+
+    for (size_t i = 0; i < sz_left; ++i)
     {
-        *res = *left;
-        ++res;
-        ++left;
+        res[i] = left[i];
+    }
+    for (size_t i = 0; i < sz_right; ++i)
+    {
+        res[sz_left + i] = right[i];
+    }
+    res[sz_left + sz_right] = '\0';
+
+    return res;
+}
+
+char* my_new_str(char* str)
+{
+    if (str == NULL)
+    {
+        return NULL;
     }
 
-    while(*right != '\0')
+    size_t sz_str = my_str_len(str);
+
+    char* res = (char*) malloc (sz_str * sizeof(char) + 1);
+    for (size_t i = 0; i < sz_str; ++i)
     {
-        *res = *right;
-        ++res;
-        ++right;
+        res[i] = str[i];
     }
 
-    *res = '\0';
-
-    return &res[0];
+    res[sz_str] = '\0';
+    return res;
 }
 
 int is_directory(const char *path)
@@ -258,12 +319,12 @@ int is_directory(const char *path)
 
 struct Chain* read_directories(struct Chain* chain_head, struct Node* directory_operands_head)
 {
-    while (directory_operands_head != NULL) 
+    struct Node *tmp_directory_head = directory_operands_head;
+    while (tmp_directory_head != NULL) 
     {
-        chain_head = read_directory(chain_head, directory_operands_head->store.name);
-        directory_operands_head = directory_operands_head->next;
+        chain_head = read_directory(chain_head, tmp_directory_head->store->name);
+        tmp_directory_head = tmp_directory_head->next;
     }
-
     return chain_head;
 }
 
@@ -274,40 +335,54 @@ struct Chain* read_directory(struct Chain* chain_head, char* path)
     struct stat mystat;
 
     struct Node* head = NULL;
-    struct Data tmp_data;
+    struct Data* tmp_data;
 
-    char buf[512];
+    char* path_1;
+    char* path_2;
     mydir = opendir(path);
     while((myfile = readdir(mydir)) != NULL)
     {
         if (my_str_len(myfile->d_name) != 0)
         {
+            tmp_data = (struct Data*) malloc (sizeof(struct Data));
             if (myfile->d_name[0] == '.')
             {
-                tmp_data.is_hidden = true;
+                tmp_data->is_hidden = true;
             }
             else 
             {
-                tmp_data.is_hidden = false;
+                tmp_data->is_hidden = false;
             }
-            tmp_data.name = myfile->d_name;
-            tmp_data.folder_structure = path;
+            path_1 = my_str_cat(path, "/");
+            path_2 = my_str_cat(path_1, myfile->d_name);
+            int i = stat(path_2, &mystat);
+            tmp_data->sec = mystat.st_mtim.tv_sec;
+            tmp_data->nsec = mystat.st_mtim.tv_nsec;
+
+            tmp_data->name = my_new_str(myfile->d_name);
+            tmp_data->folder_structure = path;
             head = add_data_sorted(head, tmp_data);
+
+            free(path_1);
+            free(path_2);
         }
 
-        // sprintf(buf, "%s/%s", ".", myfile->d_name);
-        // int i = stat(buf, &mystat);
-        // printf("%d  ", i);
-        // printf("%zu",mystat.st_size);
-        // printf(" %s\n", myfile->d_name);
+    //     // sprintf(buf, "%s/%s", ".", myfile->d_name);
+    //     // int i = stat(buf, &mystat);
+    //     // printf("%d  ", i);
+    //     // printf("%zu",mystat.st_size);
+    //     // printf(" %s\n", myfile->d_name);
 
-        //my_str_write(myfile->d_name);
-        //my_str_write("\n");
+    //     //my_str_write(myfile->d_name);
+    //     //my_str_write("\n");
 
     }
     closedir(mydir); 
 
     chain_head = add_node(chain_head, head);
+
+
+
     return chain_head;
 }
 
@@ -319,4 +394,5 @@ void ls_main(bool show_hidden, bool is_recursive, bool sort_by_time, struct Node
     struct Chain* chain_head = NULL;
     chain_head = read_directories(chain_head, directory_operands_head);
     print_chain(chain_head, show_hidden);
+    free_chain(chain_head);
 }

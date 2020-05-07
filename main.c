@@ -4,7 +4,7 @@ int main( int argc, const char* argv[] )
 {
     bool show_hidden = false, is_recursive = false, sort_by_time = false;
     struct Node *directory_operands_head = NULL, *non_directory_operands_head = NULL;
-    struct Data tmp_data;
+    struct Data* tmp_data;
 
     for (int i = 1; i < argc; ++i)
     {
@@ -34,14 +34,15 @@ int main( int argc, const char* argv[] )
             }
             else 
             {
-                tmp_data.name = argv[i];
+                tmp_data = (struct Data*) malloc (sizeof(struct Data));
+                tmp_data->name = my_new_str(argv[i]);
                 if (argv[i][0] == '.')
                 {
-                    tmp_data.is_hidden = true;
+                    tmp_data->is_hidden = true;
                 }
                 else
                 {
-                    tmp_data.is_hidden = false;
+                    tmp_data->is_hidden = false;
                 }
                 if (is_directory(argv[i]) == 1)
                 {                    
@@ -60,6 +61,9 @@ int main( int argc, const char* argv[] )
     }
 
     ls_main(show_hidden, is_recursive, sort_by_time, directory_operands_head, non_directory_operands_head);
+
+    free_node(directory_operands_head);
+    free_node(non_directory_operands_head);
 
     return 0;
 }

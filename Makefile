@@ -1,5 +1,5 @@
 output: main.o ls_base.o
-	gcc main.o ls_base.o -o my_ls
+	gcc main.o ls_base.o -g3 -fsanitize=address -fno-omit-frame-pointer -o my_ls
 
 main.o: main.c
 	gcc -c main.c
