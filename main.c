@@ -60,6 +60,13 @@ int main( int argc, const char* argv[] )
         }
     }
 
+    if (non_directory_operands_head == NULL && directory_operands_head == NULL)
+    {
+        tmp_data = (struct Data*) malloc (sizeof(struct Data));
+        tmp_data->name = my_new_str(".");
+        directory_operands_head = add_data_sorted(directory_operands_head, tmp_data);
+    }
+
     ls_main(show_hidden, is_recursive, sort_by_time, directory_operands_head, non_directory_operands_head);
 
     free_node(directory_operands_head);

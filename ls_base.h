@@ -54,10 +54,12 @@ char* my_str_cat(char* left, char* right);
 
 char* my_new_str(char* str);
 
+bool my_str_equal(char* left, char* right);
+
 int is_directory(const char *path);
 
-struct Chain* read_directories(struct Chain* chain_head, struct Node* directory_operands_head);
-struct Chain* read_directory(struct Chain* chain_head, char* path);
+struct Chain* read_directories(struct Chain* chain_head, struct Node* directory_operands_head, bool is_recursive, bool sort_by_time);
+struct Chain* read_directory(struct Chain* chain_head, char* path, bool is_recursive, bool sort_by_time);
 
 void ls_main(bool show_hidden, bool is_recursive, bool sort_by_time, struct Node *directory_operands_head, struct Node *non_directory_operands_head);
 

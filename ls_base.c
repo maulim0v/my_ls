@@ -118,10 +118,10 @@ void free_node(struct Node* head)
         {
             free(tmp->store->name);
         }
-        // if (tmp->store->folder_structure != NULL)
-        // {
-        //     free(tmp->store->folder_structure);
-        // }
+        if (tmp->store->folder_structure != NULL)
+        {
+            free(tmp->store->folder_structure);
+        }
         if (tmp->store != NULL)
         {
             free(tmp->store);
@@ -305,6 +305,32 @@ char* my_new_str(char* str)
     return res;
 }
 
+bool my_str_equal(char* left, char* right)
+{
+    if (left == NULL || right == NULL)
+    {
+        return false;
+    }
+
+    size_t sz_left = my_str_len(left);
+    size_t sz_right = my_str_len(right);
+
+    if (sz_left != sz_right)
+    {
+        return false;
+    }
+
+    for (size_t i = 0; i < sz_left; ++i)
+    {
+        if (left[i] != right[i])
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 int is_directory(const char *path)
 {
     struct stat path_stat;
@@ -317,18 +343,18 @@ int is_directory(const char *path)
     return S_ISDIR(path_stat.st_mode);
 }
 
-struct Chain* read_directories(struct Chain* chain_head, struct Node* directory_operands_head)
+struct Chain* read_directories(struct Chain* chain_head, struct Node* directory_operands_head, bool is_recursive, bool sort_by_time)
 {
     struct Node *tmp_directory_head = directory_operands_head;
     while (tmp_directory_head != NULL) 
     {
-        chain_head = read_directory(chain_head, tmp_directory_head->store->name);
+        chain_head = read_directory(chain_head, tmp_directory_head->store->name, is_recursive, sort_by_time);
         tmp_directory_head = tmp_directory_head->next;
     }
     return chain_head;
 }
 
-struct Chain* read_directory(struct Chain* chain_head, char* path)
+struct Chain* read_directory(struct Chain* chain_head, char* path, bool is_recursive, bool sort_by_time)
 {
     DIR *mydir;
     struct dirent *myfile;
@@ -360,7 +386,19 @@ struct Chain* read_directory(struct Chain* chain_head, char* path)
             tmp_data->nsec = mystat.st_mtim.tv_nsec;
 
             tmp_data->name = my_new_str(myfile->d_name);
-            tmp_data->folder_structure = path;
+            tmp_data->folder_structure = my_new_str(path);
+            
+            if ( my_str_equal(tmp_data->name, ".") || my_str_equal(tmp_data->name, "..") )
+            {
+                tmp_data->is_dir = false;                
+            }
+            else 
+            {
+                tmp_data->is_dir = is_directory(path_2);      
+            }
+
+            //printf("%s %d\n", myfile->d_name, tmp_data->is_dir);
+
             head = add_data_sorted(head, tmp_data);
 
             free(path_1);
@@ -381,7 +419,22 @@ struct Chain* read_directory(struct Chain* chain_head, char* path)
 
     chain_head = add_node(chain_head, head);
 
-
+    if (is_recursive == true)
+    {
+        struct Node* tmp_head = head;
+        while (tmp_head != NULL)
+        {
+            if (tmp_head->store->is_dir == true)
+            {
+                path_1 = my_str_cat(tmp_head->store->folder_structure, "/");
+                path_2 = my_str_cat(path_1, tmp_head->store->name);
+                chain_head = read_directory(chain_head, path_2, is_recursive, sort_by_time);
+                free(path_1);
+                free(path_2);                
+            }
+            tmp_head = tmp_head->next;
+        }
+    }
 
     return chain_head;
 }
@@ -392,7 +445,7 @@ void ls_main(bool show_hidden, bool is_recursive, bool sort_by_time, struct Node
     my_str_write("\n\n");
 
     struct Chain* chain_head = NULL;
-    chain_head = read_directories(chain_head, directory_operands_head);
+    chain_head = read_directories(chain_head, directory_operands_head, is_recursive, sort_by_time);
     print_chain(chain_head, show_hidden);
     free_chain(chain_head);
 }
