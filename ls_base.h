@@ -24,9 +24,11 @@ struct Node
 
 struct Node* create_node();
 struct Node* add_data_sorted(struct Node* head, struct Data* data);
+struct Node* add_data(struct Node* head, struct Data* data);
 struct Node* sort_by_time(struct Node* head);
 void print_node(struct Node* head, bool show_hidden);
 void free_node(struct Node* head);
+size_t get_node_size(struct Node* head);
 /// @}
 
 /// @{
@@ -46,7 +48,7 @@ void my_str_write(char* str);
 
 bool my_str_compare(char* left, char* right);
 
-bool my_int_compare(unsigned left, unsigned right);
+bool my_time_compare(struct Data left, struct Data right);
 
 size_t my_str_len(const char* str);
 

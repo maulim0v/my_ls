@@ -83,9 +83,96 @@ struct Node* add_data_sorted(struct Node* head, struct Data* data)
     return head;
 }
 
+struct Node* add_data(struct Node* head, struct Data* data)
+{
+    if (data == NULL)
+    {
+        return head;
+    }
+
+    struct Node *tmp_node, *tmp_head = head;
+    tmp_node = create_node();
+    tmp_node->store = data;
+    if(head == NULL)
+    {
+        head = tmp_node;
+    }
+    else
+    {
+        while(tmp_head->next != NULL)
+        {
+            tmp_head = tmp_head->next;
+        }
+        tmp_head->next = tmp_node;
+    }
+    return head;
+}
+
 struct Node* sort_by_time(struct Node* head)
 {
+    struct Node *tmp_head = head, *tmp_node, *tmp_prev, *tmp_next;
+    size_t sz_node = get_node_size(tmp_head);
 
+    if (sz_node < 2)
+    {
+        return head;
+    }
+
+    while(sz_node > 1)
+    {
+        size_t count = 0;
+        while (tmp_head != NULL)
+        {
+            if ( (sz_node - 1) == count)
+            {
+                break;
+            }
+
+            if (tmp_head == head)
+            {
+                tmp_next = tmp_head->next;
+                if ( my_time_compare(*tmp_head->store, *tmp_next->store) == true )
+                {
+                    tmp_prev = tmp_head;
+                    tmp_head = tmp_next;
+                }       
+                else 
+                {
+                    tmp_node = tmp_next->next;
+                    head = tmp_next;
+                    tmp_head->next = tmp_node;
+                    tmp_next->next = tmp_head;
+                    tmp_prev = tmp_next;
+                }
+            }
+            else if (tmp_head->next == NULL)
+            {
+                break;
+            }
+            else 
+            {
+                tmp_next = tmp_head->next;
+                if ( my_time_compare(*tmp_head->store, *tmp_next->store) == true )
+                {
+                    tmp_prev = tmp_head;
+                    tmp_head = tmp_next;
+                }       
+                else 
+                {
+                    tmp_node = tmp_next->next;
+                    tmp_prev->next = tmp_next;
+                    tmp_head->next = tmp_node;
+                    tmp_next->next = tmp_head;
+                    tmp_prev = tmp_next;
+                }
+            }
+            ++count;
+        }
+        tmp_head = head;
+        --sz_node;
+    }
+
+    return head;
 }
 
 void print_node(struct Node* head, bool show_hidden)
@@ -103,7 +190,10 @@ void print_node(struct Node* head, bool show_hidden)
         }
 
         my_str_write(tmp_head->store->name);
-        my_str_write("  ");
+        if (tmp_head->next != NULL)
+        {
+            my_str_write("  ");
+        }
         tmp_head = tmp_head->next;
     }
 }
@@ -129,6 +219,19 @@ void free_node(struct Node* head)
         head = head->next;
         free(tmp);
     }
+}
+
+size_t get_node_size(struct Node* head)
+{
+    size_t sz = 0;
+    struct Node* tmp_head = head;
+    while (tmp_head != NULL)
+    {
+        ++sz;
+        tmp_head = tmp_head->next;
+    }
+
+    return sz;
 }
 /// @}
 
@@ -171,10 +274,17 @@ void print_chain(struct Chain* chain_head, bool show_hidden)
     struct Chain* tmp_head = chain_head;
     while (tmp_head != NULL)
     {
-        my_str_write(tmp_head->container[0].store->folder_structure);
-        my_str_write(":\n");
+        if (my_str_equal(tmp_head->container[0].store->folder_structure, ".") == false)
+        {
+            my_str_write(tmp_head->container[0].store->folder_structure);
+            my_str_write(":\n");
+        }
         print_node(tmp_head->container, show_hidden);
-        my_str_write("\n\n");
+        if (tmp_head->next_chain != NULL)
+        {            
+            my_str_write("\n\n");
+        }
+
         tmp_head = tmp_head->next_chain;
     }
 }
@@ -247,9 +357,18 @@ bool my_str_compare(char* left, char* right)
     }
 }
 
-bool my_int_compare(unsigned left, unsigned right)
+bool my_time_compare(struct Data left, struct Data right)
 {
-    return left > right;
+    if (left.sec > right.sec)
+    {
+        return true;
+    }
+    else if (left.sec == right.sec && left.nsec > right.nsec)
+    {
+        return true;
+    }
+    
+    return false;
 }
 
 size_t my_str_len(const char* str)
@@ -354,7 +473,7 @@ struct Chain* read_directories(struct Chain* chain_head, struct Node* directory_
     return chain_head;
 }
 
-struct Chain* read_directory(struct Chain* chain_head, char* path, bool is_recursive, bool sort_by_time)
+struct Chain* read_directory(struct Chain* chain_head, char* path, bool is_recursive, bool sort_by_time_bool)
 {
     DIR *mydir;
     struct dirent *myfile;
@@ -397,26 +516,18 @@ struct Chain* read_directory(struct Chain* chain_head, char* path, bool is_recur
                 tmp_data->is_dir = is_directory(path_2);      
             }
 
-            //printf("%s %d\n", myfile->d_name, tmp_data->is_dir);
-
             head = add_data_sorted(head, tmp_data);
 
             free(path_1);
             free(path_2);
         }
-
-    //     // sprintf(buf, "%s/%s", ".", myfile->d_name);
-    //     // int i = stat(buf, &mystat);
-    //     // printf("%d  ", i);
-    //     // printf("%zu",mystat.st_size);
-    //     // printf(" %s\n", myfile->d_name);
-
-    //     //my_str_write(myfile->d_name);
-    //     //my_str_write("\n");
-
     }
     closedir(mydir); 
 
+    if (sort_by_time_bool == true)
+    {
+        head = sort_by_time(head);
+    }
     chain_head = add_node(chain_head, head);
 
     if (is_recursive == true)
@@ -428,7 +539,7 @@ struct Chain* read_directory(struct Chain* chain_head, char* path, bool is_recur
             {
                 path_1 = my_str_cat(tmp_head->store->folder_structure, "/");
                 path_2 = my_str_cat(path_1, tmp_head->store->name);
-                chain_head = read_directory(chain_head, path_2, is_recursive, sort_by_time);
+                chain_head = read_directory(chain_head, path_2, is_recursive, sort_by_time_bool);
                 free(path_1);
                 free(path_2);                
             }
@@ -442,7 +553,10 @@ struct Chain* read_directory(struct Chain* chain_head, char* path, bool is_recur
 void ls_main(bool show_hidden, bool is_recursive, bool sort_by_time, struct Node *directory_operands_head, struct Node *non_directory_operands_head)
 {
     print_node(non_directory_operands_head, show_hidden);
-    my_str_write("\n\n");
+    if (non_directory_operands_head != NULL && directory_operands_head != NULL)
+    {
+        my_str_write("\n\n");
+    }
 
     struct Chain* chain_head = NULL;
     chain_head = read_directories(chain_head, directory_operands_head, is_recursive, sort_by_time);

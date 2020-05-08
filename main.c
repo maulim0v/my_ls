@@ -36,6 +36,7 @@ int main( int argc, const char* argv[] )
             {
                 tmp_data = (struct Data*) malloc (sizeof(struct Data));
                 tmp_data->name = my_new_str(argv[i]);
+                tmp_data->folder_structure = NULL;
                 if (argv[i][0] == '.')
                 {
                     tmp_data->is_hidden = true;
@@ -64,6 +65,7 @@ int main( int argc, const char* argv[] )
     {
         tmp_data = (struct Data*) malloc (sizeof(struct Data));
         tmp_data->name = my_new_str(".");
+        tmp_data->folder_structure = NULL;
         directory_operands_head = add_data_sorted(directory_operands_head, tmp_data);
     }
 
