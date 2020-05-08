@@ -131,6 +131,7 @@ struct Node* sort_by_time(struct Node* head)
             if (tmp_head == head)
             {
                 tmp_next = tmp_head->next;
+
                 if ( my_time_compare(*tmp_head->store, *tmp_next->store) == true )
                 {
                     tmp_prev = tmp_head;
@@ -150,7 +151,7 @@ struct Node* sort_by_time(struct Node* head)
                 break;
             }
             else 
-            {
+            {                
                 tmp_next = tmp_head->next;
                 if ( my_time_compare(*tmp_head->store, *tmp_next->store) == true )
                 {
@@ -363,7 +364,7 @@ bool my_time_compare(struct Data left, struct Data right)
     {
         return true;
     }
-    else if (left.sec == right.sec && left.nsec > right.nsec)
+    else if (left.sec == right.sec && left.nsec >= right.nsec)
     {
         return true;
     }
