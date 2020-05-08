@@ -1,10 +1,11 @@
 #ifndef LS_BASE_H
 #define LS_BASE_H
 
-#include <stddef.h>
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdlib.h>
 
+/// @brief Main linked list which stores all useful data
 /// @{
 struct Data
 {
@@ -31,6 +32,7 @@ void free_node(struct Node* head);
 size_t get_node_size(struct Node* head);
 /// @}
 
+/// @brief Driving linked list for recursively storing the linked list node
 /// @{
 struct Chain
 {
@@ -44,25 +46,25 @@ void print_chain(struct Chain* chain_head, bool show_hidden);
 void free_chain(struct Chain* chain_head);
 /// @}
 
+/// @brief All helper functions
+/// @{
 void my_str_write(char* str);
-
 bool my_str_compare(char* left, char* right);
-
 bool my_time_compare(struct Data left, struct Data right);
-
 size_t my_str_len(const char* str);
-
 char* my_str_cat(char* left, char* right);
-
 char* my_new_str(char* str);
-
 bool my_str_equal(char* left, char* right);
-
 int is_directory(const char *path);
+/// @}
 
+/// @brief Main function for reading directories
+/// @{
 struct Chain* read_directories(struct Chain* chain_head, struct Node* directory_operands_head, bool is_recursive, bool sort_by_time);
 struct Chain* read_directory(struct Chain* chain_head, char* path, bool is_recursive, bool sort_by_time);
+/// @}
 
+/// @brief Main function that get called in main for all ls operations
 void ls_main(bool show_hidden, bool is_recursive, bool sort_by_time, struct Node *directory_operands_head, struct Node *non_directory_operands_head);
 
 #endif // LS_BASE_H
