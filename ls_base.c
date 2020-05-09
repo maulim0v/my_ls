@@ -9,18 +9,18 @@
 
 #include <string.h>
 
-struct Chain* read_directories(struct Chain* chain_head, struct Node* directory_operands_head, bool is_recursive, bool sort_by_time)
+struct Chain* read_directories(struct Chain* chain_head, struct Node* directory_operands_head, bool is_recursive, bool sort_by_time, bool show_hidden)
 {
     struct Node *tmp_directory_head = directory_operands_head;
     while (tmp_directory_head != NULL) 
     {
-        chain_head = read_directory(chain_head, tmp_directory_head->store->name, is_recursive, sort_by_time);
+        chain_head = read_directory(chain_head, tmp_directory_head->store->name, is_recursive, sort_by_time, show_hidden);
         tmp_directory_head = tmp_directory_head->next;
     }
     return chain_head;
 }
 
-struct Chain* read_directory(struct Chain* chain_head, char* path, bool is_recursive, bool sort_by_time_bool)
+struct Chain* read_directory(struct Chain* chain_head, char* path, bool is_recursive, bool sort_by_time_bool, bool show_hidden)
 {
     DIR *mydir;
     struct dirent *myfile;
@@ -63,7 +63,37 @@ struct Chain* read_directory(struct Chain* chain_head, char* path, bool is_recur
                 tmp_data->is_dir = is_directory(path_2);      
             }
 
-            head = add_data_sorted(head, tmp_data);
+            if (show_hidden == false)
+            {
+                if (tmp_data->is_hidden == true)
+                {
+                    if (my_str_equal(tmp_data->name, ".") || my_str_equal(tmp_data->name, ".."))
+                    {
+                        head = add_data_sorted(head, tmp_data);
+                    }
+                    else 
+                    {
+                        free(tmp_data->name);
+                        free(tmp_data->folder_structure);
+                        free(tmp_data);    
+                    }
+                }
+                else 
+                {
+                    head = add_data_sorted(head, tmp_data);    
+                }
+            }
+            else 
+            {
+                head = add_data_sorted(head, tmp_data);
+            }
+
+            // if (show_hidden == false && tmp_data->is_hidden == true && (my_str_equal(tmp_data->name, ".") || my_str_equal(tmp_data->name, "..")))
+            // {
+
+            // }
+
+            // head = add_data_sorted(head, tmp_data);
 
             free(path_1);
             free(path_2);
@@ -86,7 +116,7 @@ struct Chain* read_directory(struct Chain* chain_head, char* path, bool is_recur
             {
                 path_1 = my_str_cat(tmp_head->store->folder_structure, "/");
                 path_2 = my_str_cat(path_1, tmp_head->store->name);
-                chain_head = read_directory(chain_head, path_2, is_recursive, sort_by_time_bool);
+                chain_head = read_directory(chain_head, path_2, is_recursive, sort_by_time_bool, show_hidden);
                 free(path_1);
                 free(path_2);                
             }
@@ -97,8 +127,9 @@ struct Chain* read_directory(struct Chain* chain_head, char* path, bool is_recur
     return chain_head;
 }
 
-void ls_main(bool show_hidden, bool is_recursive, bool sort_by_time, struct Node *directory_operands_head, struct Node *non_directory_operands_head)
+void ls_main(bool show_hidden, bool is_recursive, bool sort_by_time, struct Node *directory_operands_head, struct Node *non_directory_operands_head, struct Node *exception_operands_head)
 {
+    print_exception_case(exception_operands_head);
     print_node(non_directory_operands_head, show_hidden);
     if (non_directory_operands_head != NULL && directory_operands_head != NULL)
     {
@@ -106,7 +137,8 @@ void ls_main(bool show_hidden, bool is_recursive, bool sort_by_time, struct Node
     }
 
     struct Chain* chain_head = NULL;
-    chain_head = read_directories(chain_head, directory_operands_head, is_recursive, sort_by_time);
-    print_chain(chain_head, show_hidden);
+    chain_head = read_directories(chain_head, directory_operands_head, is_recursive, sort_by_time, show_hidden);
+    bool donot_print_folder_structure_path = (non_directory_operands_head == NULL) && (exception_operands_head == NULL) && (get_chain_size(chain_head) == 1); 
+    print_chain(chain_head, show_hidden, donot_print_folder_structure_path);
     free_chain(chain_head);
 }

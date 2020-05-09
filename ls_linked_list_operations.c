@@ -168,9 +168,10 @@ struct Node* sort_by_time(struct Node* head)
     return head;
 }
 
-void print_node(struct Node* head, bool show_hidden)
+bool print_node(struct Node* head, bool show_hidden)
 {
     struct Node* tmp_head = head;
+    bool printed_something = false;
     while (tmp_head != NULL)
     {
         if (tmp_head->store->is_hidden == true)
@@ -183,10 +184,24 @@ void print_node(struct Node* head, bool show_hidden)
         }
 
         my_str_write(tmp_head->store->name);
+        printed_something = true;
         if (tmp_head->next != NULL)
         {
             my_str_write("  ");
         }
+        tmp_head = tmp_head->next;
+    }
+    return printed_something;
+}
+
+void print_exception_case(struct Node* head)
+{
+    struct Node* tmp_head = head;
+    while (tmp_head != NULL)
+    {
+        my_str_write("Hey! I really cannot access '");
+        my_str_write(tmp_head->store->name);
+        my_str_write("': No such file or directory!\n");
         tmp_head = tmp_head->next;
     }
 }
@@ -262,20 +277,24 @@ struct Chain* add_node(struct Chain* head, struct Node* node)
     return head;
 }
 
-void print_chain(struct Chain* chain_head, bool show_hidden)
+void print_chain(struct Chain* chain_head, bool show_hidden, bool donot_print_folder_structure_path)
 {
     struct Chain* tmp_head = chain_head;
     while (tmp_head != NULL)
     {
-        if (my_str_equal(tmp_head->container[0].store->folder_structure, ".") == false)
+        if (donot_print_folder_structure_path == false)
         {
             my_str_write(tmp_head->container[0].store->folder_structure);
             my_str_write(":\n");
         }
-        print_node(tmp_head->container, show_hidden);
-        if (tmp_head->next_chain != NULL)
+        bool printed_something = print_node(tmp_head->container, show_hidden);
+        if (tmp_head->next_chain != NULL && printed_something == true)
         {            
             my_str_write("\n\n");
+        }
+        else if (tmp_head->next_chain != NULL && printed_something == false)
+        {
+            my_str_write("\n");
         }
 
         tmp_head = tmp_head->next_chain;
@@ -292,5 +311,18 @@ void free_chain(struct Chain* chain_head)
         chain_head = chain_head->next_chain;
         free(tmp);
     }
+}
+
+size_t get_chain_size(struct Chain* chain_head)
+{
+    size_t sz = 0;
+    struct Chain* tmp_head = chain_head;
+    while (tmp_head != NULL)
+    {
+        ++sz;
+        tmp_head = tmp_head->next_chain;
+    }
+
+    return sz;
 }
 /// @}

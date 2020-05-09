@@ -113,7 +113,7 @@ char* my_str_cat(char* left, char* right)
     return res;
 }
 
-char* my_new_str(char* str)
+char* my_new_str(const char* str)
 {
     if (str == NULL)
     {

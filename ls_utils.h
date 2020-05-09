@@ -40,7 +40,7 @@ bool my_str_compare(char* left, char* right);
 bool my_time_compare(struct Data left, struct Data right);
 size_t my_str_len(const char* str);
 char* my_str_cat(char* left, char* right);
-char* my_new_str(char* str);
+char* my_new_str(const char* str);
 bool my_str_equal(char* left, char* right);
 int is_directory(const char *path);
 /// @}
