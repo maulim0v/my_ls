@@ -32,3 +32,9 @@ opendir
 closedir
 readdir
 ```
+
+## Run
+```
+make
+./my_ls [-R -a -t] [file ...]
+```
